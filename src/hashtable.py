@@ -1,11 +1,31 @@
 # '''
 # Linked List hash table key/value pair
 # '''
+
+class LinkedPairIterator:
+    def __init__(self, head):
+        self.head = head
+        self.node = head
+
+    def __next__(self):
+        if self.node == None:
+            raise StopIteration
+        else:
+            to_return = self.node
+            self.node = self.node.next
+            return to_return
+
+
+
 class LinkedPair:
     def __init__(self, key, value):
         self.key = key
         self.value = value
         self.next = None
+
+    def __iter__(self):
+        return LinkedPairIterator(self)
+
 
 class HashTable:
     '''
@@ -53,7 +73,22 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        idx = self._hash_mod(key)
+        node = self.storage[idx]
+        # Collision detected
+        if  node is None:
+            # add a new list to store elements
+            self.storage[idx] = LinkedPair(key, value)
+            return
+
+        last = node
+        for pair in node:
+            last = pair
+            if pair.key == key:
+                pair.value = value
+                return  # overwrit an existing element
+        # element wasn't already present, add it
+        last.next = LinkedPair(key, value)
 
 
 
@@ -65,7 +100,21 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        idx = self._hash_mod(key)
+        l = self.storage[idx]
+        if l is None:
+            return  # no such element
+        prev = None
+
+        for node in l:
+            if node.key == key:
+                # link previous element and next element to delete this element
+                if prev is not None:
+                    prev.next = node.next
+                # else this is the head element, set the head to the next element
+                else:
+                    self.storage[idx] = node.next
+            prev = node
 
 
     def retrieve(self, key):
@@ -76,7 +125,16 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
+        idx = self._hash_mod(key)
+        l = self.storage[idx]
+
+        if l is None:
+            return # no such element
+
+        for node in l:
+            if node.key == key:
+                return node.value
+
 
 
     def resize(self):
@@ -86,8 +144,14 @@ class HashTable:
 
         Fill this in.
         '''
-        pass
-
+        self.capacity *= 2
+        old_storage = self.storage
+        self.storage = [None] * self.capacity
+        for l in old_storage:
+            if l is None:
+                continue # no such linked list as this spot
+            for node in l:
+                self.insert(node.key, node.value)
 
 
 if __name__ == "__main__":
@@ -98,6 +162,8 @@ if __name__ == "__main__":
     ht.insert("line_3", "Linked list saves the day!")
 
     print("")
+
+#    print(ht.storage)
 
     # Test storing beyond capacity
     print(ht.retrieve("line_1"))
